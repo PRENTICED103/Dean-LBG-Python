@@ -11,7 +11,7 @@ pipeline {
                 ssh -i ~/.ssh/id_rsa jenkins@10.214.0.2 << EOF
                 docker stop flask-app || echo "flask-app not running"
                 docker rm flask-app || echo "flask-app not running"
-                docker rmi prentice103/python-api || echo "image does not exist"
+                docker rmi prenticed103/python-api || echo "image does not exist"
                                 '''
              }
              }
