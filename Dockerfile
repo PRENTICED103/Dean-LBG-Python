@@ -3,10 +3,10 @@ FROM python:latest
 
 WORKDIR /app
 
-COPY  . . 
+COPY . . 
 
-RUN  pip install -r "requirements.txt"
+RUN pip install -r "requirements.txt"
 
 EXPOSE 8080
 
-ENTRYPOINT  ["python", lbg.py]
+ENTRYPOINT ["python", "lbg.py"]
