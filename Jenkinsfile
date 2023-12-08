@@ -39,7 +39,7 @@ pipeline {
 
             steps {
                 sh '''
-                ssh -i ~/ .ssh/id_rsa jenkins@10.214.0.2 << EOF
+                ssh -i ~/.ssh/id_rsa jenkins@10.214.0.2 << EOF
                 docker run -d -p 80:8080 --name flask-app prenticed103/python-api
                 '''
             }
