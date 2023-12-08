@@ -25,8 +25,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--PORT", default="8080")
 args = parser.parse_args()
 
-PORT = args.PORT
-HOST = 'localhost'
+PORT = 8080
+HOST = "0.0.0.0"
 
 # get app to serve static files from the public directory
 app = Flask(__name__, static_url_path=f'/', static_folder='./static')
