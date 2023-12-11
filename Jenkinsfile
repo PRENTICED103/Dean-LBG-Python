@@ -59,7 +59,7 @@ stage('Clean Up') {
             steps {
                 sh '''
                 docker system prune -f
-                docker rmi python-api:v${BUILD_NUMBER}
+                docker rmi prenticed103/python-api:v${BUILD_NUMBER}
                 docker rmi prenticed103/flask-nginx:v${BUILD_NUMBER}
                 '''  
                             }
