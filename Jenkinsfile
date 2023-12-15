@@ -1,70 +1,97 @@
 pipeline {
-
     agent any
-
     stages {
-
-         stage('Init') {
-
+      stage('Init') {
             steps {
-                sh '''
-                ssh -i ~/.ssh/id_rsa jenkins@10.214.0.2 << EOF
-                docker stop flask-app || echo "flask-app not running"
-                docker rm flask-app || echo "flask-app not running"
-                docker stop nginx || echo "nginx not running"
-                docker rm nginx || echo "nginx not running"
-                docker rmi prenticed103/python-api || echo "image does not exist"
-                docker rmi prenticed103/flask-nginx || echo "image does not exist"
-                docker network create stretch_project1 || echo "network alreday exists"
-                                '''
-             }
-             }
-
+                script {
+                    if (env.GIT_BRANCH == "origin/main")  {
+                        sh '''
+                        kubectl create namespace prod || echo "Namespace prod already exists"
+                        '''
+                     } else if (env.GIT_BRANCH == "origin/dev")  {
+                        sh '''
+                        kubectl create namespace dev || echo "Namespace dev alreday exists"
+                        '''
+                        } else {
+                        sh '''
+                         echo "Branch not recognised"
+                         '''
+                    }
+            }
+                }
+      }
         stage('Build') {
-
             steps {
-                sh '''
-                docker build -t prenticed103/python-api -t prenticed103/python-api:v${BUILD_NUMBER} .
-                docker build -t prenticed103/flask-nginx -t prenticed103/flask-nginx:v${BUILD_NUMBER} ./nginx
-                               '''
+                script {
+                    if (env.GIT_BRANCH == "origin/main")  {
+                        sh '''
+                        docker build -t prenticed103/flask-jenk:latest -t prenticed103/flask-jenk:prod-v${BUILD_NUMBER} .
+                        '''
+                     } else if (env.GIT_BRANCH == "origin/dev")  {
+                        sh '''
+                        docker build -t prenticed103/flask-jenk:latest -t prenticed103/flask-jenk:dev-v${BUILD_NUMBER} .
+                        '''
+                     } else {
+                        sh '''
+                         echo "Branch not recognised"
+                         '''
+                    }
             }
+                }
+                        }
 
-        }
-
-  stage('Push') {
-
+        stage('Push') {
             steps {
+                script {
+                if (env.GIT_BRANCH == "origin/main")  {
                 sh '''
-                docker push prenticed103/python-api
-                docker push prenticed103/python-api:v${BUILD_NUMBER}
-                docker push prenticed103/flask-nginx
-                docker push prenticed103/flask-nginx:v${BUILD_NUMBER}
-                        
+                docker push prenticed103/flask-jenk:latest
+                docker push prenticed103/flask-jenk:prod-v${BUILD_NUMBER}
+                  '''
+                } else if (env.GIT_BRANCH == "origin/dev")  {  
+                sh '''
+                docker push prenticed103/flask-jenk:latest
+                docker push prenticed103/flask-jenk:dev-v${BUILD_NUMBER}
                 '''
+               } else {
+                sh '''
+                echo "Branch not recognised"
+                '''
+                     }
+                     }
             }
-  }
+        }
         stage('Deploy') {
-
-            steps {
+              steps {
+                script {
+                if (env.GIT_BRANCH == "origin/main")  {
                 sh '''
-                ssh -i ~/.ssh/id_rsa jenkins@10.214.0.2 << EOF
-                docker run -d --name flask-app --network stretch_project1 prenticed103/python-api 
-                docker run -d -p 80:80 --name nginx --network stretch_project1 prenticed103/flask-nginx
+                kubectl apply -n prod -f ./kubernetes
+                kubectl set image deployment/flask-deployment task1=prenticed103/flask-jenk:prod-v${BUILD_NUMBER} -n prod
                 '''
             }
-
+                if (env.GIT_BRANCH == "origin/dev")  {
+                sh '''
+                kubectl apply -n dev -f ./kubernetes
+                kubectl set image deployment/flask-deployment task1=prenticed103/flask-jenk:dev-v${BUILD_NUMBER} -n dev
+                '''
+             } else {
+                sh '''
+                echo "Branch not recognised"
+                '''
+                   }
+            } 
+        }  
         }
-stage('Clean Up') {
-
-            steps {
+        stage('Clean Up') {
+            steps 
+            {
                 sh '''
                 docker system prune -f
-                docker rmi prenticed103/python-api:v${BUILD_NUMBER}
-                docker rmi prenticed103/flask-nginx:v${BUILD_NUMBER}
                 '''  
-                            }
-     
-
-    }
-  }
-    }
+            }
+                 }
+  
+}
+}
+        
